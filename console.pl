@@ -21,8 +21,13 @@ if($fork > 0){
 while(defined($socket->recv($buf,4)) && defined($buf)){
 	my($version, $type, $length) = unpack("CCn",$buf);
 	$socket->recv($buf, $length);
-	$buf =~ s/([\0-\x1b])/'^'.('0','a'..'z','E')[ord $1]/ge;
-	print Dumper {version => $version, type => $type, length => $length, message => $buf};
+	if($type == 4){
+		my($id,$type,$returnpath,$message) = unpack("n C/a n/a a*",$buf);
+		print "Got a message for $id about $type headed for $returnpath carrying $message\n";
+	}else{
+		$buf =~ s/([\0-\x1b])/'^'.('0','a'..'z','E')[ord $1]/ge;
+		print Dumper {version => $version, type => $type, length => $length, message => $buf};
+	}
 }
 }else{
 	print STDERR "Fork failed. Weird."
