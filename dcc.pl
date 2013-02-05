@@ -30,14 +30,17 @@ while(my @ready = $s->can_read){
 			print {$clients{$returnpath}{conn}} "$message\r\n";
 		  }elsif($type == 0){ # message
 			$socket->recv($buf, $length);
-			my($id,$type,$subtype,$host,$message)=unpack("n C/a C/a n/a a*",$buf); # signature kept the same as a chat message, intentionally.
-			if($type eq "dcc" and $subtype eq "chat"){
+			my($id,$type,$nick,undef,$message)=unpack("n C/a C/a n/a a*",$buf); # signature kept the same as a chat message, intentionally.
+			if($type eq "dcc" and $message =~ /^CHAT CHAT (\d+) (\d+)/){
+				my $host = inet_ntoa(pack("N",$1));
+				my $port = $2;
+				next if $port == 0;
 				print STDERR "Connecting to $host\n" if DEBUG >= 1;
-				my $client = new IO::Socket::INET(Proto=>"tcp",PeerAddr=>$host) or next;
+				my $client = new IO::Socket::INET(Proto=>"tcp",PeerAddr=>$host,PeerPort=>$port) or next;
 				$s->add($client);
-				my $clientnick = exists($clients{$message})?$message."_":$message;
+				my $clientnick = exists($clients{$nick})?$nick."_":$nick;
 				while(exists($clients{$clientnick})){
-					$clientnick = $message."_".rand();
+					$clientnick = $nick."_".rand();
 				}
 				print STDERR "Decided to call $host '$clientnick'\n" if DEBUG >= 1;
 				@clients{$clientnick,$client} = ({conn => $client, nick => $clientnick})[0,0]; # Set both nickname and socketname in the clients hash

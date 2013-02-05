@@ -43,11 +43,8 @@ if($fork > 0){
 				if($CTCPcmd eq "VERSION"){
 					print "NOTICE $nick :\x01VERSION artemis3 IRC module\x01\r\n";
 				}elsif($CTCPcmd eq "DCC"){
-					if($CTCParg =~ /^ CHAT CHAT (\d+) (\d+)/){
-						my $host = inet_ntoa(pack("N",$1));
-						my $port = $2;
-						print $socket pack("CCn/a*",128,0,pack("C/a* C/a* n/a* a*","dcc","chat","$host:$port",$nick));
-					}
+					$CTCParg =~ s/^ //;
+					print $socket pack("CCn/a*",128,0,pack("C/a* C/a* n/a* a*","dcc",$nick,$returnpath,$CTCParg));
 				}elsif($CTCPcmd eq "PING"){
 					print "NOTICE $nick :\x01PING$CTCParg\x01\r\n";
 				}

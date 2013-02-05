@@ -49,7 +49,6 @@ sub subscribableTypes{
 sub lastGatewayId{
 	my($connection, $data) = @_;
 	my $count = unpack("N!", $data);
-	print STDERR "!$count\n";
 	if($count == -1){
 		print $connection pack("CCnn",128,6,4,$#gateways);
 	}else{
@@ -84,7 +83,6 @@ END{unlink $socket_path}
 #main loop
 while(my @ready = $s->can_read){
 	for my $ready (@ready){
-		print STDERR "Operating on $ready\n" if DEBUG >= 3;
 		if($ready == $listner){
 			my $incoming = $listner->accept();
 			$s->add($incoming);
@@ -105,7 +103,7 @@ while(my @ready = $s->can_read){
 				close($ready);
 				next; # We should now no longer have a reference to the dead socket
 			}
-			print STDERR "Got a message version ",$version," of type ",$type," with a message length of ",$length,"\n" if DEBUG >= 3;
+			print STDERR "Got a message of type ",$type," with a message length of ",$length,"\n" if DEBUG >= 3;
 			if($length){
 				$ready->recv($buf, $length);
 			}else{
