@@ -9,8 +9,8 @@ my $socket = IO::Socket::UNIX->new(
         Peer => $socket_path,
 ) or die("Can't connect to server: $!\n");
 print "Connected!\n";
-print $socket pack("CCn",128,2,0);
-print $socket pack("CCn/a*",128,1,"dcc");
+print $socket pack("CCn",128,2,0); # register as a gateway
+print $socket pack("CCn/a*",128,1,"dcc"); # and listen for dcc mesages
 my $s = IO::Select->new();
 my $buf;
 $s->add($socket);

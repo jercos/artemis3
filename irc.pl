@@ -24,7 +24,10 @@ if($fork > 0){
 		s/[\r\n]//g;
 		print STDERR "$_\n";
 		my($special,$main,$longarg) = split(/^:| :/,$_,3);
-		print "$_\n" && next if s/^PING/PONG/;
+		if(s/^PING/PONG/){
+			print "$_\r\n";
+			next;
+		}
 		printf STDERR "%02d:%02d:%02d special data: '%s'\n",(localtime)[2,1,0],$_ if $special;
 		die "$_\n" if /^ERROR/;
 		my($mask,$command,@args) = split(/ +/,$main);
@@ -38,7 +41,7 @@ if($fork > 0){
 				my($CTCPcmd, $CTCParg) = ($1, $2);
 				print STDERR "Got CTCP $CTCPcmd: '$CTCParg'\n";
 				if($CTCPcmd eq "VERSION"){
-					print $irc "NOTICE $nick :\x01VERSION artemis3 IRC module\x01\r\n";
+					print "NOTICE $nick :\x01VERSION artemis3 IRC module\x01\r\n";
 				}elsif($CTCPcmd eq "DCC"){
 					if($CTCParg =~ /^ CHAT CHAT (\d+) (\d+)/){
 						my $host = inet_ntoa(pack("N",$1));
@@ -46,7 +49,7 @@ if($fork > 0){
 						print $socket pack("CCn/a*",128,0,pack("C/a* C/a* n/a* a*","dcc","chat","$host:$port",$nick));
 					}
 				}elsif($CTCPcmd eq "PING"){
-					print $irc "NOTICE $nick :\x01PING$CTCParg\x01\r\n";
+					print "NOTICE $nick :\x01PING$CTCParg\x01\r\n";
 				}
 			}else{
 				print $socket pack("CCn/a*",128,0,pack("C/a* C/a* n/a* a*","chat",$nick,$returnpath,$longarg)) if $command eq "PRIVMSG";
