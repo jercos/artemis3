@@ -15,7 +15,13 @@ if($fork > 0){
 	END{kill 1, $fork}
 	while(<>){
 		chomp;
-		print $socket pack("CCn/a*",128,0,pack("C/a* C/a* n/a* a*","chat","root","#test",$_));
+		if(/^\.types/){
+			print $socket pack("CCn", 128, 5); # send a type list request
+		}elsif(/^\.gateways/){
+			print $socket pack("CCnN!", 128, 6, 4, -1); # send a gateway list request
+		}else{ # just an ordinary message...
+			print $socket pack("CCn/a*",128,0,pack("C/a* C/a* n/a* a*","chat","root","#test",$_)); # Send input lines as "chat" type messages to #test.
+		}
 	}
 }elsif($fork == 0){
 while(defined($socket->recv($buf,4)) && defined($buf)){

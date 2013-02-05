@@ -10,10 +10,10 @@ my $socket = IO::Socket::UNIX->new(
 print "Connected to router\n";
 print $socket pack("CCn",128,2,0);
 my $irc = IO::Socket::INET->new(
-	PeerAddr => "openrd",
+	PeerAddr => "abacus.cluenet.org",
 	PeerPort => 6667,
 ) or die("Can't connect to IRC server: $!\n");
-print $irc "USER jercosbot * * :I'm artemis version 3's IRC module\nNICK artemis3\n";
+print $irc "USER jercosbot * * :I'm artemis version 3's IRC module\r\nNICK artemis3\r\n";
 my $buf;
 my $fork = fork;
 if($fork > 0){
@@ -32,8 +32,25 @@ if($fork > 0){
 		if($mask =~ /!/){
 			($nick, $user, $host) = $mask =~ /^([^!]+)!([^@]+)@(.*)$/;
 		}
-		print $socket pack("CCn/a*",128,0,pack("C/a* C/a* n/a* a*","chat",$nick,$args[0],$longarg)) if $command eq "PRIVMSG";
-		print "JOIN #thoseguys\n" if $command eq "001";
+		my $returnpath = $args[0] eq "artemis3" ? $nick : $args[0];
+		if($command eq "PRIVMSG"){
+			if($longarg =~ /^\x01([A-Z]+)(.*)\x01$/){
+				my($CTCPcmd, $CTCParg) = ($1, $2);
+				print STDERR "Got CTCP $CTCPcmd: '$CTCParg'\n";
+				if($CTCPcmd eq "VERSION"){
+					print $irc "NOTICE $nick :\x01VERSION artemis3 IRC module\x01\r\n";
+				}elsif($CTCPcmd eq "DCC"){
+					if($CTCParg =~ /^ CHAT CHAT (\d+) (\d+)/){
+						my $host = inet_ntoa(pack("N",$1));
+						my $port = $2;
+						print $socket pack("CCn/a*",128,0,pack("C/a* C/a* n/a* a*","dcc","chat","$host:$port",$nick));
+					}
+				}
+			}else{
+				print $socket pack("CCn/a*",128,0,pack("C/a* C/a* n/a* a*","chat",$nick,$returnpath,$longarg)) if $command eq "PRIVMSG";
+			}
+		}
+		print "JOIN #thoseguys\r\n" if $command eq "001";
 	}
 }elsif($fork == 0){
 while(defined($socket->recv($buf,4)) && defined($buf)){
@@ -41,7 +58,7 @@ while(defined($socket->recv($buf,4)) && defined($buf)){
 	$socket->recv($buf, $length);
 	if($type == 4){
 		my($id,$type,$returnpath,$message) = unpack("n C/a n/a a*",$buf);
-		my $privmsg = "PRIVMSG $returnpath :$message\n";
+		my $privmsg = "PRIVMSG $returnpath :$message\r\n";
 		print $privmsg;
 		print $irc $privmsg;
 	}else{
@@ -50,5 +67,5 @@ while(defined($socket->recv($buf,4)) && defined($buf)){
 	}
 }
 }else{
-	print STDERR "Fork failed. Weird."
+	print STDERR "Fork failed. Weird.\n"
 }
