@@ -24,7 +24,7 @@ if($fork > 0){
 		s/[\r\n]//g;
 		print STDERR "$_\n";
 		my($special,$main,$longarg) = split(/^:| :/,$_,3);
-		print "$_\n" if s/^PING/PONG/;
+		print "$_\n" && next if s/^PING/PONG/;
 		printf STDERR "%02d:%02d:%02d special data: '%s'\n",(localtime)[2,1,0],$_ if $special;
 		die "$_\n" if /^ERROR/;
 		my($mask,$command,@args) = split(/ +/,$main);
@@ -45,6 +45,8 @@ if($fork > 0){
 						my $port = $2;
 						print $socket pack("CCn/a*",128,0,pack("C/a* C/a* n/a* a*","dcc","chat","$host:$port",$nick));
 					}
+				}elsif($CTCPcmd eq "PING"){
+					print $irc "NOTICE $nick :\x01PING$CTCParg\x01\r\n";
 				}
 			}else{
 				print $socket pack("CCn/a*",128,0,pack("C/a* C/a* n/a* a*","chat",$nick,$returnpath,$longarg)) if $command eq "PRIVMSG";
