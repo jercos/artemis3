@@ -94,7 +94,6 @@ while(my @ready = $s->can_read){
 			unless(defined $version and $version == 128){
 				print STDERR "Bad version, killing client.\n" if DEBUG >= 1;
 				if(exists($gateways{$ready})){
-					print STDERR "Destroying gateway (",$gateways{$ready}{sd},")\n";
 					undef $gateways{$ready}{conn}; # Delete the connection entry in any gateways this client has
 				}
 				for my $clients (values %subscriptions){
