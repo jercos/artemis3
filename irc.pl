@@ -60,9 +60,17 @@ while(defined($socket->recv($buf,4)) && defined($buf)){
 	$socket->recv($buf, $length);
 	if($type == 4){
 		my($id,$type,$returnpath,$message) = unpack("n C/a n/a a*",$buf);
-		my $privmsg = "PRIVMSG $returnpath :$message\r\n";
-		print $privmsg;
-		print $irc $privmsg;
+		my $output = "";
+		if($type eq "chat" || $type eq "autochat"){
+			my $command = $type eq "chat"?"PRIVMSG":"NOTICE";
+			$output = join "",map{"$command $returnpath :$_\r\n"}split(/[\r\n]+/,$message);
+		}elsif($type eq "rawirc" || $type eq "raw"){
+			$output = "$message\r\n";
+		}else{
+			next;
+		}
+		print $output;
+		print $irc $output;
 	}else{
 		$buf =~ s/([\0-\x1b])/'^'.('0','a'..'z','E')[ord $1]/ge;
 		print Dumper {version => $version, type => $type, length => $length, message => $buf};

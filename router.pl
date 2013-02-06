@@ -14,7 +14,7 @@ my $socket_path = '/tmp/artemis.sock';
 sub registerGateway{
 	my($connection, $data) = @_;
 	my $id = scalar @gateways;
-	my $gateway = $gateways{$connection} = $gateways[$id] = {id => $id, conn => $connection};
+	my $gateway = $gateways{$connection} = $gateways[$id] = {id => $id, conn => $connection, sd => fileno($connection)};
 	print $connection pack("CCnn",128,2,2,$gateway->{id}) # Send the assigned gateway ID back to the client
 }
 sub subscribeType{
@@ -94,6 +94,7 @@ while(my @ready = $s->can_read){
 			unless(defined $version and $version == 128){
 				print STDERR "Bad version, killing client.\n" if DEBUG >= 1;
 				if(exists($gateways{$ready})){
+					print STDERR "Destroying gateway (",$gateways{$ready}{sd},")\n";
 					undef $gateways{$ready}{conn}; # Delete the connection entry in any gateways this client has
 				}
 				for my $clients (values %subscriptions){
