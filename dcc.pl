@@ -44,7 +44,7 @@ while(my @ready = $s->can_read){
 				}
 				print STDERR "Decided to call $host '$clientnick'\n" if DEBUG >= 1;
 				@clients{$clientnick,$client} = ({conn => $client, nick => $clientnick})[0,0]; # Set both nickname and socketname in the clients hash
-				print $socket pack("CCn/a*",128,0,pack("C/a* C/a* n n a*","auth",$clientnick,2,$gid,"session start $host:$port"));
+				print $socket pack("CCn/a*",128,0,pack("C/a* C/a* n/a* a*","auth",$clientnick,"session","start $host:$port"));
 			}
 		  }elsif($type == 2){ # gateway ID
 			$gid = unpack("n", $buf);
@@ -54,7 +54,7 @@ while(my @ready = $s->can_read){
 			$_ = <$ready>;
 			unless(defined){
 				print STDERR "Removing client ", $client->{nick}, "\n" if DEBUG >= 1;
-				print $socket pack("CCn/a*",128,0,pack("C/a* C/a* n n a*","auth",$client->{nick},2,$gid,"session end")); # n n will be decoded as n/a
+				print $socket pack("CCn/a*",128,0,pack("C/a* C/a* n/a* a*","auth",$client->{nick},"session","end $!"));
 				$s->remove($ready);
 				delete @clients{$client->{nick},$client->{conn}};
 				close $ready;
