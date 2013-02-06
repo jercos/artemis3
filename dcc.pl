@@ -15,6 +15,7 @@ my $s = IO::Select->new();
 my $buf;
 $s->add($socket);
 my %clients = ();
+my $gid; # gateway ID, we should get this as one of our first messages.
 while(my @ready = $s->can_read){
 	for my $ready (@ready){
 		if($ready == $socket){
@@ -22,14 +23,13 @@ while(my @ready = $s->can_read){
 		  $socket->recv($buf,4);
 		  my($version, $type, $length) = unpack("CCn",$buf);
 		  next unless $version == 128;
+		  $socket->recv($buf, $length);
 		  if($type == 4){ # reply
-		  	$socket->recv($buf, $length);
 			my($id,$type,$returnpath,$message) = unpack("n C/a n/a a*",$buf);
 			print STDERR "To $returnpath: $message\n" if DEBUG >= 2;
 			next unless exists($clients{$returnpath});
 			print {$clients{$returnpath}{conn}} "$message\r\n";
 		  }elsif($type == 0){ # message
-			$socket->recv($buf, $length);
 			my($id,$type,$nick,undef,$message)=unpack("n C/a C/a n/a a*",$buf); # signature kept the same as a chat message, intentionally.
 			if($type eq "dcc" and $message =~ /^CHAT CHAT (\d+) (\d+)/){
 				my $host = inet_ntoa(pack("N",$1));
@@ -44,13 +44,17 @@ while(my @ready = $s->can_read){
 				}
 				print STDERR "Decided to call $host '$clientnick'\n" if DEBUG >= 1;
 				@clients{$clientnick,$client} = ({conn => $client, nick => $clientnick})[0,0]; # Set both nickname and socketname in the clients hash
+				print $socket pack("CCn/a*",128,0,pack("C/a* C/a* n n a*","auth",$clientnick,2,$gid,"session start $host:$port"));
 			}
+		  }elsif($type == 2){ # gateway ID
+			$gid = unpack("n", $buf);
 		  }
 		}else{
 			my $client = $clients{$ready};
 			$_ = <$ready>;
 			unless(defined){
 				print STDERR "Removing client ", $client->{nick}, "\n" if DEBUG >= 1;
+				print $socket pack("CCn/a*",128,0,pack("C/a* C/a* n n a*","auth",$client->{nick},2,$gid,"session end")); # n n will be decoded as n/a
 				$s->remove($ready);
 				delete @clients{$client->{nick},$client->{conn}};
 				close $ready;
