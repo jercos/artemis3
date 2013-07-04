@@ -32,7 +32,7 @@ sub message{
 }
 sub reply{
 	my($connection, $data) = @_;
-	my($id,$type,$returnpath,$message) = unpack("n C/a n/a a*",$data);
+	my $id = unpack("n",$data);
 	return unless $gateways[$id]{conn};
 	print {$gateways[$id]{conn}} pack("CCn/a*",128,4,$data)
 	
