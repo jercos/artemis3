@@ -42,7 +42,7 @@ sub new{
 	return bless($self, $class);
 }
 
-sub type{shift->{type}}
+sub ptype{shift->{type}}
 sub raw{shift->{raw}}
 
 sub parse{
@@ -92,7 +92,7 @@ sub typeName{
 
 sub reply{
 	my $self = shift;
-	return unless $self->{type} == A_MESSAGE;
+	die "Reply called on non-message packet" unless $self->{type} == A_MESSAGE;
 	my $message = shift || $self->message;
 	return pack("n C/a* n/a* a*",$self->id,$self->type,$self->returnpath,$message);
 }

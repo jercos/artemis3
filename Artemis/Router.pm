@@ -30,8 +30,9 @@ sub message{
 
 sub subscribe{
 	my $self = shift;
-	my $type = shift;
-	$self->sendPacket(A_SUBSCRIBE, $type);
+	for my $type (@_) {
+		$self->sendPacket(A_SUBSCRIBE, $type);
+	}
 	return $self;
 }
 
@@ -84,7 +85,7 @@ sub block{
 	my $buf;
 	return undef unless defined $self->{sock}->recv($buf, A_PREAMBLE_LENGTH);
 	if (length($buf) != A_PREAMBLE_LENGTH) {
-		warn "!!!DATA PROBABLY LOST!!! Short read, returning undef.";
+		warn "!!!DATA PROBABLY LOST!!! Expected preamble length (".A_PREAMBLE_LENGTH."), got ".length($buf);
 		return undef;
 	}
 	my($version, $type, $length) = unpack("CCn",$buf);

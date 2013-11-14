@@ -25,6 +25,8 @@ for my $ready (@ready){
 			print $socket pack("CCn", 128, 5); # send a type list request
 		}elsif(/^\.gateways/){
 			print $socket pack("CCnN!", 128, 6, 4, -1); # send a gateway list request
+		}elsif(s/^\.rawirc (\d+) //){
+			print $socket pack("CCn/a*",128,4,pack("nC/an/aa*", +$1, "rawirc", "N/A", $_));
 		}else{ # just an ordinary message...
 			print $socket pack("CCn/a*",128,0,pack("C/a* C/a* n/a* a*","chat","root","#test",$_)); # Send input lines as "chat" type messages to #test.
 		}

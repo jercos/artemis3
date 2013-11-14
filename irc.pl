@@ -10,7 +10,7 @@ my $socket = IO::Socket::UNIX->new(
 ) or die("Can't connect to router: $!\n");
 print $socket pack("CCn",128,2,0);
 my $irc = IO::Socket::INET->new(
-	PeerAddr => "abacus.cluenet.org",
+	PeerAddr => "irc.freenode.net",
 	PeerPort => 6667,
 ) or die("Can't connect to IRC server: $!\n");
 print $irc "USER jercosbot * * :I'm artemis version 3's IRC module\r\nNICK artemis3\r\n";
@@ -40,21 +40,19 @@ for my $ready (@ready){
 		if($command eq "PRIVMSG"){
 			my $returnpath = $args[0] eq "artemis3" ? $nick : $args[0];
 			if(my($CTCPcmd, $CTCParg) = $longarg =~ /^\x01([A-Z]+)(.*)\x01$/){
-				if($CTCPcmd eq "VERSION"){
-					print $irc "NOTICE $nick :\x01VERSION artemis3 IRC module\x01\r\n";
-				}elsif($CTCPcmd eq "DCC"){
-					$CTCParg =~ s/^\s+//; # ltrim
-					print $socket pack("CCn/a*",128,0,pack("C/a* C/a* n/a* a*","dcc",$nick,$returnpath,$CTCParg));
-				}elsif($CTCPcmd eq "PING"){
-					print $irc "NOTICE $nick :\x01PING$CTCParg\x01\r\n";
-				}elsif($CTCPcmd eq "ACTION"){
+				if($CTCPcmd eq "ACTION"){
 					print $socket pack("CCn/a*",128,0,pack("C/a* C/a* n/a* a*","chat",$nick,$returnpath,"* $nick$CTCParg"));
+				}else{
+					print $irc "NOTICE $nick :\x01VERSION artemis3 IRC module\x01\r\n" if $CTCPcmd eq "VERSION";
+					print $irc "NOTICE $nick :\x01PING$CTCParg\x01\r\n" if $CTCPcmd eq "PING";
+					$CTCParg =~ s/^\s+//; # ltrim
+					print $socket pack("CCn/a*",128,0,pack("C/a* C/a* n/a* a*",lc $CTCPcmd,$nick,$nick,$CTCParg));
 				}
 			}else{
 				print $socket pack("CCn/a*",128,0,pack("C/a* C/a* n/a* a*","chat",$nick,$returnpath,$longarg));
 			}
 		}
-		print $irc "JOIN #thoseguys\r\n" if $command eq "001";
+		print $irc "JOIN #tox\r\n" if $command eq "001";
 	}elsif($ready == $socket){ # A frame from the router
 		$socket->recv($buf,4);
 		my($version, $type, $length) = unpack("CCn",$buf);
@@ -68,7 +66,7 @@ for my $ready (@ready){
 			}elsif($type eq "rawirc" || $type eq "raw"){
 				$output = "$message\r\n";
 			}else{
-				next;
+				$output = join "",map{"NOTICE $returnpath :\x01\U$type\E $_\x01\r\n"}split(/[\r\n]+/,$message);
 			}
 			print $irc $output;
 		}elsif($type == 2){ # gateway ID

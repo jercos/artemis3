@@ -107,7 +107,7 @@ while(my @ready = $s->can_read){
 			if($length){
 				$ready->recv($buf, $length);
 			}else{
-				undef $buf;
+				$buf = "";
 			}
 			if(length($buf) != $length){
 				print STDERR "Message length: ",length($buf),", Expected length: $length.\n" if DEBUG >= 1;
