@@ -10,7 +10,7 @@ my $socket = IO::Socket::UNIX->new(
 ) or die("Can't connect to router: $!\n");
 print $socket pack("CCn",128,2,0);
 my $irc = IO::Socket::INET->new(
-	PeerAddr => "irc.freenode.net",
+	PeerAddr => "irc.subluminal.net",
 	PeerPort => 6667,
 ) or die("Can't connect to IRC server: $!\n");
 print $irc "USER jercosbot * * :I'm artemis version 3's IRC module\r\nNICK artemis3\r\n";
@@ -52,7 +52,7 @@ for my $ready (@ready){
 				print $socket pack("CCn/a*",128,0,pack("C/a* C/a* n/a* a*","chat",$nick,$returnpath,$longarg));
 			}
 		}
-		print $irc "JOIN #tox\r\n" if $command eq "001";
+		print $irc "JOIN #boats\r\n" if $command eq "001";
 	}elsif($ready == $socket){ # A frame from the router
 		$socket->recv($buf,4);
 		my($version, $type, $length) = unpack("CCn",$buf);
